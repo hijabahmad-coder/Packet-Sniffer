@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Sniffer| Network Traffic Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0a0f1e 0%, #0c1222 100%);
+            font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        /* Main container */
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Header / Navbar */
+        .navbar {
+            background: rgba(18, 25, 45, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 2rem;
+            padding: 1rem 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .logo-area h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #c084fc, #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .logo-area p {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .monitor-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #1e293b;
+            color: #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-start {
+            background: linear-gradient(95deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+        }
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(16,185,129,0.4);
+        }
+        .btn-stop {
+            background: linear-gradient(95deg, #ef4444, #b91c1c);
+            color: white;
+            box-shadow: 0 4px 12px rgba(239,68,68,0.3);
+        }
+        .btn-stop:hover {
+            transform: translateY(-2px);
+        }
+
+        .status-chip {
+            background: #0f172a;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid #334155;
+        }
+        .led-green {
+            width: 10px;
+            height: 10px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 #10b981;
+            animation: pulse 1.8s infinite;
+        }
+        .led-red {
+            width: 10px;
+            height: 10px;
+            background: #ef4444;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 #ef4444;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16,185,129,0.7);}
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16,185,129,0);}
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16,185,129,0);}
+        }
+
+        /* Filter Card */
+        .filter-card {
+            background: #111827;
+            border-radius: 1.8rem;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #1f2a3e;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+        }
+        .filter-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+            font-weight: 600;
+        }
+        .filter-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+        .input-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            color: #6c86a3;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            background: #0f172a;
+            border: 1px solid #2d3a5e;
+            border-radius: 1rem;
+            color: #f1f5f9;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+        }
+        .btn-filter, .btn-reset {
+            padding: 0.7rem 1.6rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-filter {
+            background: #3b82f6;
+            color: white;
+        }
+        .btn-filter:hover { background: #2563eb; }
+        .btn-reset {
+            background: #334155;
+            color: #e2e8f0;
+        }
+        .btn-reset:hover { background: #475569; }
+
+        /* Stats row */
+        .stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-block {
+            background: #111827;
+            flex: 1;
+            border-radius: 1.5rem;
+            padding: 1.2rem;
+            border: 1px solid #1f2a3e;
+            backdrop-filter: blur(4px);
+            transition: all 0.2s;
+        }
+        .stat-block:hover {
+            transform: translateY(-3px);
+            border-color: #3b82f6;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #7e8aa2;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #f0f3fa;
+            line-height: 1.2;
+        }
+        .stat-sub {
+            font-size: 0.75rem;
+            color: #5f7d9c;
+            margin-top: 6px;
+        }
+
+        /* Table card */
+        .table-card {
+            background: #0f172a;
+            border-radius: 1.8rem;
+            border: 1px solid #1f2a3e;
+            overflow: hidden;
+        }
+        .table-header {
+            padding: 1.2rem 1.8rem;
+            border-bottom: 1px solid #1e2a3a;
+            background: #0b1120;
+        }
+        .table-header h3 {
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        th {
+            text-align: left;
+            padding: 1rem 1rem;
+            background: #0a0f1c;
+            color: #a5b4fc;
+            font-weight: 600;
+            border-bottom: 1px solid #1e2a3a;
+        }
+        td {
+            padding: 0.9rem 1rem;
+            border-bottom: 1px solid #1a2538;
+            color: #cfdfed;
+        }
+        tr:hover td {
+            background: #131c2c;
+        }
+        .protocol-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .protocol-tcp { background: #1e3a8a; color: #93c5fd; }
+        .protocol-udp { background: #14532d; color: #86efac; }
+        .protocol-icmp { background: #9a3412; color: #fed7aa; }
+        .service-tag {
+            background: #1e293b;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #b9c8f0;
+        }
+        .empty-msg {
+            text-align: center;
+            padding: 3rem;
+            color: #6c86a3;
+        }
+
+        @media (max-width: 680px) {
+            body { padding: 1rem; }
+            .navbar { flex-direction: column; text-align: center; gap: 12px; }
+            .stats-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <!-- Header -->
+    <div class="navbar">
+        <div class="logo-area">
+            <h1>📡 Packet Sniffer </h1>
+            <p>network traffic analysis · realtime logs</p>
+        </div>
+        <div class="monitor-controls">
+            <form method="post" style="display:inline;">
+                <button type="submit" name="start" class="btn btn-start">▶ START</button>
+            </form>
+            <form method="post" style="display:inline;">
+                <button type="submit" name="stop" class="btn btn-stop">⏹ STOP</button>
+            </form>
+            <div class="status-chip">
+                {% if monitoring %}
+                    <span class="led-green"></span><span>MONITORING ACTIVE</span>
+                {% else %}
+                    <span class="led-red"></span><span>MONITORING STOPPED</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Mode Selection - Add this after navbar and before filter-card -->
+<div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; justify-content: center; flex-wrap: wrap;">
+    <form method="post" style="display:inline;">
+        <button type="submit" name="csv_mode" class="btn" style="background: {% if not live_mode %}#3b82f6{% else %}#334155{% endif %}; border: none; padding: 0.6rem 1.5rem; border-radius: 40px; font-weight: 600; cursor: pointer;">
+            📁 CSV Mode (Static Data)
+        </button>
+    </form>
+    <form method="post" style="display:inline;">
+        <button type="submit" name="live_mode" class="btn" style="background: {% if live_mode %}#10b981{% else %}#334155{% endif %}; border: none; padding: 0.6rem 1.5rem; border-radius: 40px; font-weight: 600; cursor: pointer;">
+            🔴 Live Capture Mode (Real Packets)
+        </button>
+    </form>
+    {% if live_mode and monitoring %}
+    <form method="post" style="display:inline;">
+        <button type="submit" name="clear_logs" class="btn" style="background: #ef4444; border: none; padding: 0.6rem 1.5rem; border-radius: 40px; font-weight: 600; cursor: pointer;">
+            🗑 Clear Logs
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Warning for Live Mode -->
+{% if live_mode %}
+<div style="background: #f59e0b20; border-left: 4px solid #f59e0b; padding: 0.8rem 1.2rem; border-radius: 1rem; margin-bottom: 1rem;">
+    <small style="color: #fbbf24;">⚠️ LIVE CAPTURE MODE ACTIVE — Run as Administrator to capture packets. Generate traffic (ping, browse web) to see packets!</small>
+</div>
+{% endif %}
+    <!-- Filter Section -->
+    <div class="filter-card">
+        <div class="filter-title">
+            <span>🔍</span> <span>FILTER PACKETS</span>
+        </div>
+        <form method="post" class="filter-form">
+            <div class="input-group">
+                <label>Protocol</label>
+                <select name="protocol">
+                    <option value="All">All</option>
+                    <option value="TCP">TCP</option>
+                    <option value="UDP">UDP</option>
+                    <option value="ICMP">ICMP</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Source IP</label>
+                <input type="text" name="src_ip" placeholder="192.168.1.5">
+            </div>
+            <div class="input-group">
+                <label>Destination IP</label>
+                <input type="text" name="dst_ip" placeholder="8.8.8.8">
+            </div>
+            <div class="input-group" style="flex:0.4; display: flex; gap: 8px;">
+                <button type="submit" name="filter" class="btn-filter">Apply Filter</button>
+                <button type="submit" name="reset" class="btn-reset">Reset</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-row">
+        <div class="stat-block">
+            <div class="stat-label">TOTAL PACKETS</div>
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-sub">captured & filtered</div>
+        </div>
+        <div class="stat-block">
+            <div class="stat-label">PROTOCOL BREAKDOWN</div>
+            <div class="stat-value" style="font-size: 1.6rem;">TCP {{ stats.tcp }} | UDP {{ stats.udp }} | ICMP {{ stats.icmp }}</div>
+            <div class="stat-sub">by packet type</div>
+        </div>
+        <div class="stat-block">
+            <div class="stat-label">AVG PACKET SIZE</div>
+            <div class="stat-value">{{ stats.avg_size }} <span style="font-size: 1rem;">bytes</span></div>
+            <div class="stat-sub">payload average</div>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="table-card">
+        <div class="table-header">
+            <h3>📋 LIVE PACKET LOGS</h3>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>TIMESTAMP</th><th>SOURCE IP</th><th>DESTINATION IP</th><th>PROTOCOL</th><th>SIZE (bytes)</th><th>SERVICE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if monitoring and packets|length > 0 %}
+                        {% for p in packets %}
+                            <tr>
+                                <td>{{ p['Time'] }}</td>
+                                <td>{{ p['Source IP'] }}</td>
+                                <td>{{ p['Destination IP'] }}</td>
+                                <td><span class="protocol-badge protocol-{{ p['Protocol']|lower }}">{{ p['Protocol'] }}</span></td>
+                                <td>{{ p['Packet Size'] }}</td>
+                                <td><span class="service-tag">{{ p['Service'] }}</span></td>
+                            </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="empty-msg">
+                                {% if not monitoring %}
+                                    ⚡ MONITORING STOPPED — press <strong>START</strong> to display network logs.
+                                {% else %}
+                                    📭 No packets to show. Either dataset empty or filter too strict.
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
