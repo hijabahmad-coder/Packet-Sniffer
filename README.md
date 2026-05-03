@@ -223,9 +223,3 @@ If you found this project helpful, please give it a ⭐ on GitHub!
 ---
 
 **Happy Monitoring! 📡**
-```
-
-
-**Ye README aapke repo ko aur bhi professional banayega!** 🎯
-
-Koi change chahiye? Jaise apna name, project details, ya specific features add karne hain to batao!
