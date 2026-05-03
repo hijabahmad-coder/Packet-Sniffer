@@ -176,9 +176,4 @@ This project is for educational purposes as part of Computer Networks course.
 ---
 
 ⭐ Star this repository if you found it useful!
-```
 
-
-Ab aapka GitHub repo professional lagega! 🚀
-
-**Koi aur change chahiye?** Batao!
